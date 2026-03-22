@@ -1,10 +1,10 @@
 # Technical Skills
 
 ## Programming
-`Python` `R` `MATLAB` `LaTeX` `Bash`
+`Python` `C++` `Ampl` `LaTeX` `Bash`
 
 ## Tools & Frameworks
-`Git` `Docker` `Linux` `HPC / Slurm`
+`Git` `Gurobi` `Linux`
 
 ## Domain
-`Skill A` `Skill B` `Skill C`
+`Integer Optimization` `Stochastic Modeling` `Algorithms`

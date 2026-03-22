@@ -1,9 +1,11 @@
 # About Me
 
-Welcome to my academic site. I'm a researcher focused on [your field]. This site mirrors the Yazi terminal file manager — navigate with vim keys.
+Welcome to my academic website. I am a PhD candidate studying Operations research with a focus on building contested logistic models for the contemporary world 
 
 ## Research Interests
 
-Describe your primary research interests and what drives your academic work. This is the first thing visitors will read.
-
-`Tag One` `Tag Two` `Tag Three` `Tag Four`
+- Contested Logistics
+- Integer Programming 
+- Networks
+- Game Theory
+- Intersection of AI, and prescriptive modeling

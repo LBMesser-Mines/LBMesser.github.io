@@ -2,5 +2,5 @@
 
 | Years | Degree | Institution |
 |-------|--------|-------------|
-| 2023 — Present | PhD, [Your Field] | [Your University] |
-| 2019 — 2023 | B.S. [Your Major] | [Your Undergrad] |
+| 2025 — Present | PhD, [Operations Research] | [CSM] |
+| 2021 — 2025 | B.S. [Industria Engineering] | [FSU] |

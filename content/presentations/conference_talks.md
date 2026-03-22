@@ -1,11 +1,11 @@
 # Conference Presentations
 
-**Conference Presentation Title**
-Major Conference Name 2025
-*July 2025 · Poster*
+**WIP**
+INFROMS 2026
+*Nov 2026 · Oral*
 
 ---
 
-**Another Conference Presentation**
-Regional Meeting 2024
-*November 2024 · Oral*
+**WIP**
+GRADS Student Confrence 
+*Apirl 2026 · Oral*

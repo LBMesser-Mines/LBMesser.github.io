@@ -1,5 +1,5 @@
 # Preprints & Working Papers
 
-**A Work-in-Progress Paper**
-*__Your Name__ et al.*
-arXiv · 2026 (under review)
+Currently working on a red models paper and an applied paper.
+
+WIP
