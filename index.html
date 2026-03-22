@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>~/academic</title>
+<link href="https://fonts.googleapis.com/css2?family=Quantico:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
+<style>
+  :root {
+    --bg:          #0a0a0a;
+    --surface:     #111111;
+    --panel:       #141414;
+    --border:      #2a2a2a;
+    --white:       #f2f3f4;
+    --dim:         #6b6b6b;
+    --green:       #C166FA;
+    --green-light: #d08dfb;
+    --orange:      #ff6a00;
+    --lime:        #c8ff00;
+    --font:        'Quantico', 'Consolas', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--white);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.6;
+    cursor: default;
+    user-select: none;
+  }
+
+  ::selection { background: var(--orange); color: var(--bg); }
+
+  /* ===== SHELL LAYOUT ===== */
+  .shell {
+    display: grid;
+    grid-template-rows: 36px 1fr 28px;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* ===== TOP BAR ===== */
+  .top-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    align-items: center;
+    padding: 0 16px;
+    background: var(--green);
+    border-bottom: 1px solid var(--green-light);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+  .top-bar .clock { text-align: left; color: #000000; }
+  .top-bar .name  { text-align: center; color: #000000; text-transform: uppercase; letter-spacing: 0.15em; font-size: 13px; }
+  .top-bar .date  { text-align: right; color: #000000; font-weight: 400; }
+
+  /* ===== MAIN PANELS ===== */
+  .panels {
+    display: grid;
+    grid-template-columns: 200px 260px 1fr;
+    overflow: hidden;
+  }
+
+  .panel {
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .panel:last-child { border-right: none; }
+
+  .panel-header {
+    padding: 10px 14px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--dim);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .panel-header .path {
+    color: var(--orange);
+    font-weight: 400;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    text-transform: none;
+  }
+
+  .panel-body {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--panel);
+  }
+
+  .panel-body::-webkit-scrollbar { width: 4px; }
+  .panel-body::-webkit-scrollbar-track { background: transparent; }
+  .panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ===== LIST ITEMS ===== */
+  .list-item {
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.08s;
+    position: relative;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .list-item:hover { background: rgba(255,255,255,0.03); }
+  .list-item.active {
+    background: var(--green);
+    color: var(--white);
+  }
+  .list-item.highlighted {
+    background: rgba(200,255,0,0.06);
+  }
+  .list-item .icon {
+    font-size: 12px;
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+    color: var(--dim);
+  }
+  .list-item.active .icon { color: var(--lime); }
+  .list-item .label { overflow: hidden; text-overflow: ellipsis; }
+  .list-item .meta {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--dim);
+    flex-shrink: 0;
+  }
+  .list-item.active .meta { color: rgba(255,255,255,0.6); }
+
+  /* ===== RIGHT PANEL — PREVIEW ===== */
+  .preview-panel .panel-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+    line-height: 1.75;
+    user-select: text;
+  }
+
+  /* Markdown rendered styles */
+  .preview-panel h1 { font-size: 20px; font-weight: 700; color: var(--orange); margin-bottom: 8px; letter-spacing: 0.02em; }
+  .preview-panel h2 { font-size: 15px; font-weight: 700; color: var(--lime); margin-top: 20px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .preview-panel h3 { font-size: 14px; font-weight: 700; color: var(--green); margin-top: 16px; margin-bottom: 4px; }
+  .preview-panel p  { font-size: 13px; color: #c0c0c0; margin-bottom: 10px; }
+  .preview-panel a  { color: var(--orange); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+  .preview-panel a:hover { border-bottom-color: var(--orange); }
+  .preview-panel strong { color: var(--white); }
+  .preview-panel em { color: #999; font-style: italic; }
+  .preview-panel hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+  .preview-panel ul, .preview-panel ol { padding-left: 20px; margin-bottom: 10px; font-size: 13px; color: #c0c0c0; }
+  .preview-panel li { margin-bottom: 4px; }
+  .preview-panel code {
+    font-family: var(--font);
+    font-size: 11px;
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    color: var(--lime);
+    border-radius: 2px;
+    background: rgba(200,255,0,0.04);
+  }
+  .preview-panel pre { background: var(--bg); padding: 12px; border-radius: 4px; margin: 10px 0; overflow-x: auto; }
+  .preview-panel pre code { border: none; padding: 0; background: none; color: #c0c0c0; display: block; }
+  .preview-panel blockquote { border-left: 3px solid var(--green); padding-left: 14px; margin: 10px 0; color: #999; }
+  .preview-panel table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+  .preview-panel th { text-align: left; padding: 6px 10px; border-bottom: 2px solid var(--border); color: var(--dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .preview-panel td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: #c0c0c0; }
+  .preview-panel img { max-width: 100%; border-radius: 3px; border: 1px solid var(--border); margin: 8px 0; }
+
+  /* PDF embed */
+  .pdf-viewer { width: 100%; height: 100%; border: none; border-radius: 3px; background: #222; }
+  .pdf-container { height: calc(100% - 8px); }
+  .preview-panel .loading { color: var(--dim); font-size: 12px; padding: 20px; }
+
+  /* ===== BOTTOM BAR ===== */
+  .bottom-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--dim);
+  }
+  .bottom-bar .mode {
+    color: var(--bg);
+    background: var(--orange);
+    padding: 1px 8px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    font-size: 10px;
+  }
+  .bottom-bar .keys span { margin-left: 12px; }
+  .bottom-bar .keys kbd {
+    display: inline-block;
+    background: var(--border);
+    color: var(--white);
+    padding: 0px 5px;
+    border-radius: 2px;
+    font-family: var(--font);
+    font-size: 10px;
+    margin-right: 2px;
+  }
+
+  /* ===== VIM COMMAND LINE ===== */
+  .cmd-line {
+    display: none;
+    position: fixed;
+    bottom: 28px;
+    left: 0;
+    width: 100%;
+    height: 28px;
+    background: var(--bg);
+    border-top: 1px solid var(--orange);
+    padding: 0 16px;
+    align-items: center;
+    font-size: 13px;
+    color: var(--orange);
+    z-index: 100;
+    position: relative;
+  }
+  .cmd-line.open { display: flex; }
+  .cmd-line .cmd-prompt { margin-right: 4px; color: var(--lime); }
+  .cmd-line input {
+    background: none;
+    border: none;
+    color: var(--orange);
+    font-family: var(--font);
+    font-size: 13px;
+    outline: none;
+    flex: 1;
+    position: relative;
+    z-index: 2;
+  }
+  .cmd-line .cmd-ghost {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    color: var(--dim);
+    pointer-events: none;
+    z-index: 1;
+    white-space: nowrap;
+  }
+  .cmd-line .cmd-ghost .ghost-typed { visibility: hidden; }
+  .cmd-line .cmd-ghost .ghost-rest { color: var(--dim); opacity: 0.5; }
+  .cmd-line .cmd-tab-hint {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--dim);
+    flex-shrink: 0;
+    padding-left: 12px;
+  }
+  .cmd-line .cmd-tab-hint kbd {
+    background: var(--border);
+    color: var(--white);
+    padding: 0 4px;
+    border-radius: 2px;
+    font-family: var(--font);
+    font-size: 9px;
+    margin-right: 2px;
+  }
+
+  /* ===== FILE LIST POPUP ===== */
+  .file-list-popup {
+    display: none;
+    position: fixed;
+    bottom: 28px;
+    left: 0;
+    width: 320px;
+    max-height: 60vh;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+    overflow-y: auto;
+    z-index: 99;
+    font-size: 12px;
+    padding: 6px 0;
+  }
+  .file-list-popup.open { display: block; }
+  .file-list-popup .fl-header {
+    padding: 6px 14px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--dim);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+  }
+  .file-list-popup .fl-section {
+    padding: 4px 14px 2px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-top: 4px;
+  }
+  .file-list-popup .fl-item {
+    padding: 3px 14px 3px 24px;
+    color: #c0c0c0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.08s;
+  }
+  .file-list-popup .fl-item:hover {
+    background: rgba(255,255,255,0.04);
+    color: var(--orange);
+  }
+  .file-list-popup .fl-item .fl-icon {
+    color: var(--dim);
+    font-size: 11px;
+    width: 14px;
+    text-align: center;
+  }
+  .file-list-popup .fl-close {
+    padding: 6px 14px;
+    font-size: 10px;
+    color: var(--dim);
+    text-align: center;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+  }
+  .file-list-popup .fl-close kbd {
+    background: var(--border);
+    color: var(--white);
+    padding: 0 4px;
+    border-radius: 2px;
+    font-family: var(--font);
+    font-size: 9px;
+  }
+  .file-list-popup::-webkit-scrollbar { width: 4px; }
+  .file-list-popup::-webkit-scrollbar-track { background: transparent; }
+  .file-list-popup::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 900px) {
+    .panels { grid-template-columns: 160px 200px 1fr; }
+  }
+  @media (max-width: 640px) {
+    .panels { grid-template-columns: 1fr; }
+    .panel:nth-child(1),
+    .panel:nth-child(2) { display: none; }
+    .panel.mobile-active { display: flex !important; }
+    .bottom-bar .keys { display: none; }
+  }
+
+  .list-item:focus-visible {
+    outline: 1px solid var(--orange);
+    outline-offset: -1px;
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="clock" id="clock">00:00:00 UTC</div>
+    <div class="name">Your Name</div>
+    <div class="date" id="date-auc"></div>
+  </div>
+
+  <!-- MAIN PANELS -->
+  <div class="panels">
+    <div class="panel" id="panel-tabs">
+      <div class="panel-header">~/academic <span class="path">6 items</span></div>
+      <div class="panel-body" id="tab-list"></div>
+    </div>
+
+    <div class="panel" id="panel-sub">
+      <div class="panel-header"><span id="sub-title">intro</span> <span class="path" id="sub-count"></span></div>
+      <div class="panel-body" id="sub-list"></div>
+    </div>
+
+    <div class="panel preview-panel" id="panel-preview">
+      <div class="panel-header"><span id="preview-title">preview</span> <span class="path" id="preview-path"></span></div>
+      <div class="panel-body" id="preview-body"></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div class="bottom-bar">
+    <span class="mode" id="mode-indicator">NORMAL</span>
+    <div class="keys">
+      <span><kbd>h</kbd><kbd>j</kbd><kbd>k</kbd><kbd>l</kbd> navigate</span>
+      <span><kbd>Enter</kbd> select</span>
+      <span><kbd>g</kbd><kbd>g</kbd> top</span>
+      <span><kbd>G</kbd> bottom</span>
+      <span><kbd>/</kbd> go to</span>
+      <span><kbd>:</kbd> command</span>
+      <span><kbd>:ls</kbd> files</span>
+    </div>
+  </div>
+
+  <!-- FILE LIST POPUP -->
+  <div class="file-list-popup" id="file-list-popup"></div>
+
+  <!-- COMMAND LINE -->
+  <div class="cmd-line" id="cmd-line">
+    <span class="cmd-prompt" id="cmd-prompt">:</span>
+    <div style="position:relative;flex:1;display:flex;align-items:center;">
+      <input type="text" id="cmd-input" autocomplete="off" spellcheck="false">
+      <div class="cmd-ghost" id="cmd-ghost"><span class="ghost-typed" id="ghost-typed"></span><span class="ghost-rest" id="ghost-rest"></span></div>
+    </div>
+    <div class="cmd-tab-hint" id="cmd-tab-hint"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// SITE STRUCTURE — edit this to match your content/ folder
+// ============================================================
+// Each key = a folder in content/
+// Each sub = a .md file in that folder
+// icon: displayed in the file list
+// file: path relative to site root
+// For PDFs: set pdf: true and point file to slides/ folder
+
+const SITE_DATA = {
+  intro: {
+    icon: '⊡',
+    subs: [
+      { name: 'about.md',   icon: '◈', file: 'content/intro/about.md' },
+      { name: 'bio.md',     icon: '◇', file: 'content/intro/bio.md' },
+      { name: 'news.md',    icon: '◆', file: 'content/intro/news.md' },
+    ]
+  },
+  research: {
+    icon: '⬡',
+    subs: [
+      { name: 'project_1.md',   icon: '▸', file: 'content/research/project_1.md' },
+      { name: 'project_2.md',   icon: '▸', file: 'content/research/project_2.md' },
+      { name: 'open_source.md', icon: '▹', file: 'content/research/open_source.md' },
+    ]
+  },
+  publications: {
+    icon: '⎔',
+    subs: [
+      { name: 'journal_articles.md',  icon: '▪', file: 'content/publications/journal_articles.md' },
+      { name: 'conference_papers.md',  icon: '▪', file: 'content/publications/conference_papers.md' },
+      { name: 'preprints.md',          icon: '▫', file: 'content/publications/preprints.md' },
+    ]
+  },
+  presentations: {
+    icon: '◱',
+    subs: [
+      { name: 'invited_talks.md',    icon: '▶', file: 'content/presentations/invited_talks.md' },
+      { name: 'conference_talks.md',  icon: '▶', file: 'content/presentations/conference_talks.md' },
+      { name: 'slides_deck.pdf',      icon: '◧', file: 'slides/example_talk.pdf', pdf: true },
+    ]
+  },
+  cv: {
+    icon: '☰',
+    subs: [
+      { name: 'education.md',   icon: '⊞', file: 'content/cv/education.md' },
+      { name: 'experience.md',  icon: '⊞', file: 'content/cv/experience.md' },
+      { name: 'awards.md',      icon: '★', file: 'content/cv/awards.md' },
+      { name: 'skills.md',      icon: '⊟', file: 'content/cv/skills.md' },
+      { name: 'download_cv.md', icon: '⇩', file: 'content/cv/download_cv.md' },
+    ]
+  },
+  contact: {
+    icon: '◉',
+    subs: [
+      { name: 'email.md', icon: '✉', file: 'content/contact/email.md' },
+    ]
+  }
+};
+
+// ============================================================
+// STATE
+// ============================================================
+const state = {
+  activePanel: 0,
+  tabIndex: 0,
+  subIndex: 0,
+  tabs: Object.keys(SITE_DATA),
+  mode: 'NORMAL',
+  gPending: false
+};
+
+// Content cache so we don't re-fetch
+const contentCache = {};
+
+// ============================================================
+// MARKDOWN RENDERING
+// ============================================================
+marked.setOptions({
+  breaks: true,
+  gfm: true
+});
+
+async function fetchContent(filePath) {
+  if (contentCache[filePath]) return contentCache[filePath];
+  try {
+    const resp = await fetch(filePath);
+    if (!resp.ok) throw new Error(`${resp.status}`);
+    const text = await resp.text();
+    contentCache[filePath] = text;
+    return text;
+  } catch (err) {
+    return `# File Not Found\n\nCould not load \`${filePath}\`\n\nMake sure the file exists and the site is served over HTTP (not file://).\n\n\`${err.message}\``;
+  }
+}
+
+// ============================================================
+// RENDERING
+// ============================================================
+function getTab() { return state.tabs[state.tabIndex]; }
+function getSubs() { return SITE_DATA[getTab()].subs; }
+function getCurrentSub() { return getSubs()[state.subIndex]; }
+
+function renderTabs() {
+  const el = document.getElementById('tab-list');
+  el.innerHTML = state.tabs.map((tab, i) => {
+    const d = SITE_DATA[tab];
+    const count = d.subs.length;
+    const cls = (state.activePanel === 0 && i === state.tabIndex) ? 'active' : (i === state.tabIndex ? 'highlighted' : '');
+    return `<div class="list-item ${cls}" data-panel="0" data-index="${i}">
+      <span class="icon">${d.icon}</span>
+      <span class="label">${tab}</span>
+      <span class="meta">${count}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderSubs() {
+  const subs = getSubs();
+  const tab = getTab();
+  document.getElementById('sub-title').textContent = tab;
+  document.getElementById('sub-count').textContent = `${subs.length} items`;
+
+  const el = document.getElementById('sub-list');
+  el.innerHTML = subs.map((sub, i) => {
+    const cls = (state.activePanel === 1 && i === state.subIndex) ? 'active' : (i === state.subIndex ? 'highlighted' : '');
+    return `<div class="list-item ${cls}" data-panel="1" data-index="${i}">
+      <span class="icon">${sub.icon}</span>
+      <span class="label">${sub.name}</span>
+    </div>`;
+  }).join('');
+}
+
+async function renderPreview() {
+  const tab = getTab();
+  const sub = getCurrentSub();
+  document.getElementById('preview-title').textContent = sub.name;
+  document.getElementById('preview-path').textContent = `~/${tab}/${sub.name}`;
+
+  const previewBody = document.getElementById('preview-body');
+
+  // PDF files — render in iframe
+  if (sub.pdf) {
+    previewBody.innerHTML = `<div class="pdf-container"><iframe class="pdf-viewer" src="${sub.file}"></iframe></div>`;
+    return;
+  }
+
+  // Check for PDF_EMBED directive inside .md
+  previewBody.innerHTML = '<div class="loading">loading...</div>';
+  const mdText = await fetchContent(sub.file);
+
+  const pdfMatch = mdText.match(/<!--\s*PDF_EMBED:\s*(.+?)\s*-->/);
+  if (pdfMatch) {
+    const pdfPath = pdfMatch[1].trim();
+    const remainingMd = mdText.replace(pdfMatch[0], '').trim();
+    const html = remainingMd ? marked.parse(remainingMd) : '';
+    previewBody.innerHTML = `
+      <div class="pdf-container" style="height:70%;">
+        <iframe class="pdf-viewer" src="${pdfPath}"></iframe>
+      </div>
+      ${html}
+    `;
+    return;
+  }
+
+  // Normal markdown
+  previewBody.innerHTML = marked.parse(mdText);
+}
+
+function renderAll() {
+  renderTabs();
+  renderSubs();
+  renderPreview();
+}
+
+// ============================================================
+// CLOCK & DATE (UTC)
+// ============================================================
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getUTCHours()).padStart(2, '0');
+  const m = String(now.getUTCMinutes()).padStart(2, '0');
+  const s = String(now.getUTCSeconds()).padStart(2, '0');
+  document.getElementById('clock').textContent = `${h}:${m}:${s} UTC`;
+
+  const months = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+  const aucYear = now.getUTCFullYear() + 753;
+  const day = now.getUTCDate();
+  const month = months[now.getUTCMonth()];
+  document.getElementById('date-auc').textContent = `${day}.${month}.${aucYear} AUC`;
+}
+
+// ============================================================
+// VIM NAVIGATION
+// ============================================================
+function navigate(direction) {
+  if (direction === 'j') {
+    if (state.activePanel === 0) {
+      state.tabIndex = Math.min(state.tabIndex + 1, state.tabs.length - 1);
+      state.subIndex = 0;
+    } else if (state.activePanel === 1) {
+      state.subIndex = Math.min(state.subIndex + 1, getSubs().length - 1);
+    } else {
+      document.getElementById('preview-body').scrollBy(0, 60);
+      return;
+    }
+  } else if (direction === 'k') {
+    if (state.activePanel === 0) {
+      state.tabIndex = Math.max(state.tabIndex - 1, 0);
+      state.subIndex = 0;
+    } else if (state.activePanel === 1) {
+      state.subIndex = Math.max(state.subIndex - 1, 0);
+    } else {
+      document.getElementById('preview-body').scrollBy(0, -60);
+      return;
+    }
+  } else if (direction === 'l') {
+    state.activePanel = Math.min(state.activePanel + 1, 2);
+  } else if (direction === 'h') {
+    state.activePanel = Math.max(state.activePanel - 1, 0);
+  }
+  renderAll();
+}
+
+function goTop() {
+  if (state.activePanel === 0) { state.tabIndex = 0; state.subIndex = 0; }
+  else if (state.activePanel === 1) { state.subIndex = 0; }
+  else { document.getElementById('preview-body').scrollTop = 0; return; }
+  renderAll();
+}
+
+function goBottom() {
+  if (state.activePanel === 0) { state.tabIndex = state.tabs.length - 1; state.subIndex = 0; }
+  else if (state.activePanel === 1) { state.subIndex = getSubs().length - 1; }
+  else { const el = document.getElementById('preview-body'); el.scrollTop = el.scrollHeight; return; }
+  renderAll();
+}
+
+// ============================================================
+// COMMAND / GO TO MODE
+// ============================================================
+let tcIndex = -1;
+let tcLastInput = '';
+
+function openCmd(mode) {
+  state.mode = mode;
+  document.getElementById('cmd-line').classList.add('open');
+  document.getElementById('cmd-prompt').textContent = mode === 'GOTO' ? 'go to ▸ ' : ':';
+  const inp = document.getElementById('cmd-input');
+  inp.value = '';
+  inp.focus();
+  document.getElementById('mode-indicator').textContent = mode === 'GOTO' ? 'GO TO' : mode;
+  tcIndex = -1;
+  tcLastInput = '';
+  updateGhost();
+}
+
+function closeCmd() {
+  state.mode = 'NORMAL';
+  document.getElementById('cmd-line').classList.remove('open');
+  document.getElementById('mode-indicator').textContent = 'NORMAL';
+  document.getElementById('ghost-typed').textContent = '';
+  document.getElementById('ghost-rest').textContent = '';
+  document.getElementById('cmd-tab-hint').innerHTML = '';
+}
+
+function execCommand(cmd) {
+  cmd = cmd.trim().toLowerCase();
+  const tabMap = { intro: 0, research: 1, publications: 2, pub: 2, presentations: 3, pres: 3, cv: 4, contact: 5 };
+  if (tabMap[cmd] !== undefined) {
+    state.tabIndex = tabMap[cmd];
+    state.subIndex = 0;
+    state.activePanel = 0;
+    renderAll();
+  } else if (cmd === 'q' || cmd === 'quit') {
+    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#6b6b6b;font-family:Quantico,monospace;font-size:14px;">:q — thanks for visiting</div>';
+  } else if (cmd === 'ls' || cmd === 'files') {
+    toggleFileList();
+  }
+}
+
+function toggleFileList() {
+  const popup = document.getElementById('file-list-popup');
+  if (popup.classList.contains('open')) { popup.classList.remove('open'); return; }
+  let total = 0;
+  let html = '';
+  for (const tab of state.tabs) {
+    const subs = SITE_DATA[tab].subs;
+    total += subs.length;
+    html += `<div class="fl-section">${SITE_DATA[tab].icon} ~/${tab}/</div>`;
+    subs.forEach((sub, si) => {
+      html += `<div class="fl-item" data-tab="${tab}" data-sub="${si}"><span class="fl-icon">${sub.icon}</span>${sub.name}</div>`;
+    });
+  }
+  html = `<div class="fl-header"><span>ALL FILES</span><span>${total} items</span></div>` + html;
+  html += `<div class="fl-close"><kbd>Esc</kbd> close · click to navigate</div>`;
+  popup.innerHTML = html;
+  popup.classList.add('open');
+  popup.querySelectorAll('.fl-item').forEach(item => {
+    item.addEventListener('click', () => {
+      state.tabIndex = state.tabs.indexOf(item.dataset.tab);
+      state.subIndex = parseInt(item.dataset.sub);
+      state.activePanel = 2;
+      popup.classList.remove('open');
+      renderAll();
+    });
+  });
+}
+
+function execGoTo(query) {
+  query = query.toLowerCase();
+  for (let t = 0; t < state.tabs.length; t++) {
+    const tab = state.tabs[t];
+    const subs = SITE_DATA[tab].subs;
+    for (let s = 0; s < subs.length; s++) {
+      if (subs[s].name.toLowerCase().includes(query) || tab.includes(query)) {
+        state.tabIndex = t;
+        state.subIndex = s;
+        state.activePanel = 2;
+        renderAll();
+        return;
+      }
+    }
+  }
+}
+
+// Tab completion
+function getAllTargets() {
+  const targets = [];
+  for (const tab of state.tabs) {
+    targets.push({ name: tab, tab, subIndex: 0 });
+    SITE_DATA[tab].subs.forEach((sub, i) => {
+      targets.push({ name: sub.name, tab, subIndex: i });
+    });
+  }
+  return targets;
+}
+
+function getMatches(input) {
+  if (!input) return [];
+  const q = input.toLowerCase();
+  return getAllTargets().filter(t => t.name.toLowerCase().includes(q));
+}
+
+function tabComplete() {
+  const cmdInput = document.getElementById('cmd-input');
+  const current = cmdInput.value;
+  if (current !== tcLastInput) tcIndex = -1;
+  const matches = getMatches(current || '');
+  if (matches.length === 0) return;
+  tcIndex = (tcIndex + 1) % matches.length;
+  tcLastInput = matches[tcIndex].name;
+  cmdInput.value = matches[tcIndex].name;
+  updateGhost();
+}
+
+function updateGhost() {
+  const val = document.getElementById('cmd-input').value;
+  const ghostTyped = document.getElementById('ghost-typed');
+  const ghostRest = document.getElementById('ghost-rest');
+  const tabHint = document.getElementById('cmd-tab-hint');
+
+  if (state.mode !== 'GOTO') { ghostTyped.textContent = ''; ghostRest.textContent = ''; tabHint.innerHTML = ''; return; }
+
+  const matches = getMatches(val);
+  if (val && matches.length > 0) {
+    const best = matches[0].name;
+    const idx = best.toLowerCase().indexOf(val.toLowerCase());
+    if (idx === 0) { ghostTyped.textContent = val; ghostRest.textContent = best.slice(val.length); }
+    else { ghostTyped.textContent = ''; ghostRest.textContent = ''; }
+    tabHint.innerHTML = `<kbd>Tab</kbd> ${matches.length} match${matches.length > 1 ? 'es' : ''}`;
+  } else {
+    ghostTyped.textContent = ''; ghostRest.textContent = '';
+    tabHint.innerHTML = val ? 'no matches' : '<kbd>Tab</kbd> complete';
+  }
+}
+
+document.getElementById('cmd-input').addEventListener('input', () => { tcIndex = -1; updateGhost(); });
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+document.addEventListener('keydown', (e) => {
+  if (state.mode === 'COMMAND' || state.mode === 'GOTO') {
+    if (e.key === 'Escape') { closeCmd(); e.preventDefault(); }
+    else if (e.key === 'Tab') { e.preventDefault(); if (state.mode === 'GOTO') tabComplete(); }
+    else if (e.key === 'Enter') {
+      const val = document.getElementById('cmd-input').value;
+      if (state.mode === 'COMMAND') execCommand(val);
+      else execGoTo(val);
+      closeCmd();
+      e.preventDefault();
+    }
+    return;
+  }
+
+  const key = e.key;
+  if (['h','j','k','l'].includes(key) && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault(); state.gPending = false; navigate(key);
+  } else if (key === 'Enter') {
+    e.preventDefault(); state.gPending = false;
+    if (state.activePanel < 2) { state.activePanel++; renderAll(); }
+  } else if (key === 'g') {
+    if (state.gPending) { goTop(); state.gPending = false; }
+    else { state.gPending = true; setTimeout(() => { state.gPending = false; }, 600); }
+  } else if (key === 'G') {
+    state.gPending = false; goBottom();
+  } else if (key === ':') {
+    e.preventDefault(); openCmd('COMMAND');
+  } else if (key === '/') {
+    e.preventDefault(); openCmd('GOTO');
+  } else if (key === 'Escape') {
+    state.gPending = false;
+    const popup = document.getElementById('file-list-popup');
+    if (popup.classList.contains('open')) { popup.classList.remove('open'); }
+    else { state.activePanel = 0; renderAll(); }
+  } else { state.gPending = false; }
+});
+
+// Mouse support
+document.addEventListener('click', (e) => {
+  const item = e.target.closest('.list-item');
+  if (!item) return;
+  const panel = parseInt(item.dataset.panel);
+  const index = parseInt(item.dataset.index);
+  if (panel === 0) { state.tabIndex = index; state.subIndex = 0; state.activePanel = 0; }
+  else if (panel === 1) { state.subIndex = index; state.activePanel = 1; }
+  renderAll();
+});
+
+// ============================================================
+// INIT
+// ============================================================
+updateClock();
+setInterval(updateClock, 1000);
+renderAll();
+</script>
+</body>
+</html>
