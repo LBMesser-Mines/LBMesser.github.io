@@ -6,6 +6,5 @@ INFROMS 2026
 
 ---
 
-**WIP**
-GRADS Student Confrence 
-*Apirl 2026 · Oral*
+GRADS Student Competition  
+*Apiril 2026 · Oral*
